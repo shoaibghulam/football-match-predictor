@@ -1,0 +1,22 @@
+services:
+  api:
+    build: ./backend
+    environment:
+      MP_CORS_ORIGINS: http://localhost:8080
+      FOOTBALL_DATA_ORG_KEY: ${FOOTBALL_DATA_ORG_KEY:-}
+    volumes:
+      - ./data/raw:/app/data/raw:ro
+      - ./backend/artifacts:/app/backend/artifacts
+      - api-db:/app/backend/data
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  api-db:

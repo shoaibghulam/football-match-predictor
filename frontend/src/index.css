@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-home: var(--home);
+  --color-draw: var(--draw);
+  --color-away: var(--away);
+}
+
+:root {
+  color-scheme: light dark;
+  --home: #1d4ed8; /* blue-700: 6.7:1 on white */
+  --draw: #64748b; /* slate-500: 4.8:1 on white */
+  --away: #c2410c; /* orange-700: 5.2:1 on white */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --home: #60a5fa; /* blue-400 on slate-900 */
+    --draw: #94a3b8; /* slate-400 */
+    --away: #fb923c; /* orange-400 */
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-600 dark:outline-blue-400;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900;
+  }
+
+  .btn {
+    @apply inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800;
+  }
+
+  .btn-primary {
+    @apply border-blue-700 bg-blue-700 text-white hover:bg-blue-800 dark:border-blue-500 dark:bg-blue-500 dark:text-slate-950 dark:hover:bg-blue-400;
+  }
+
+  .input {
+    @apply min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-400;
+  }
+
+  .muted {
+    @apply text-slate-600 dark:text-slate-400;
+  }
+
+  .chip {
+    @apply inline-flex min-h-9 items-center rounded-full border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800;
+  }
+
+  .chip[aria-pressed='true'] {
+    @apply border-blue-700 bg-blue-700 text-white hover:bg-blue-800 dark:border-blue-400 dark:bg-blue-400 dark:text-slate-950;
+  }
+}

@@ -1,0 +1,25 @@
+# data & artifacts
+data/raw/
+data/processed/
+archive.zip
+backend/artifacts/
+backend/data/
+*.joblib
+*.cbm
+# python
+__pycache__/
+.venv/
+*.pyc
+.pytest_cache/
+.coverage
+# node
+node_modules/
+dist/
+# env
+.env
+*.sqlite3
+*.db
+
+# profiler output
+*.prof
+backend/o

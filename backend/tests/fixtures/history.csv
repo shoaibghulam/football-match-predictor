@@ -1,0 +1,6 @@
+Division,MatchDate,MatchTime,HomeTeam,AwayTeam,HomeElo,AwayElo,Form3Home,Form5Home,Form3Away,Form5Away,FTHome,FTAway,FTResult,HTHome,HTAway,HTResult,HomeShots,AwayShots,HomeTarget,AwayTarget,HomeFouls,AwayFouls,HomeCorners,AwayCorners,HomeYellow,AwayYellow,HomeRed,AwayRed,OddHome,OddDraw,OddAway,MaxHome,MaxDraw,MaxAway,Over25,Under25,MaxOver25,MaxUnder25,HandiSize,HandiHome,HandiAway,C_LTH,C_LTA,C_VHD,C_VAD,C_HTB,C_PHB
+F1,2000-07-28,,Marseille,Troyes,1686.34,1586.57,0.0,0.0,0.0,0.0,3.0,1.0,H,2.0,1.0,H,,,,,,,,,,,,,1.65,3.3,4.3,,,,,,,,,,,,,,,,
+F1,2000-07-28,,Paris SG,Strasbourg,1714.89,1642.51,0.0,0.0,0.0,0.0,3.0,1.0,H,1.0,1.0,D,,,,,,,,,,,,,1.6,3.4,4.6,,,,,,,,,,,,,,,,
+F1,2026-09-03,19:45:00,Toulouse,Lille,1654.07,1789.37,2.0,8.0,4.0,8.0,0.0,1.0,A,0.0,0.0,D,24.0,10.0,10.0,6.0,16.0,9.0,6.0,2.0,1.0,0.0,0.0,0.0,3.25,3.25,2.15,3.5,3.4,2.2,2.0,1.8,2.1,1.8,0.25,1.98,1.88,,,,,,
+SC0,2026-09-03,19:45:00,Hibernian,Hearts,1433.89,1494.62,6.0,9.0,6.0,9.0,1.0,3.0,A,0.0,2.0,A,17.0,12.0,4.0,5.0,16.0,9.0,7.0,8.0,3.0,0.0,1.0,0.0,2.45,3.5,2.65,2.6,3.5,2.75,1.88,1.98,1.88,1.98,0.0,1.85,2.0,,,,,,
+SP1,2026-09-03,20:00:00,Sociedad,Celta,1663.97,1682.41,3.0,4.0,1.0,5.0,0.0,0.0,D,0.0,0.0,D,16.0,7.0,5.0,2.0,15.0,11.0,11.0,3.0,2.0,3.0,0.0,0.0,1.95,3.6,3.8,2.0,3.6,3.95,1.93,1.93,1.93,1.93,-0.5,1.95,1.9,,,,,,

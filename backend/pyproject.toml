@@ -1,0 +1,38 @@
+[project]
+name = "matchpredict"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "Shoaib Ghulam", email = "shoaibghulam@neurocare.ai" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "apscheduler>=3.11.3",
+    "catboost>=1.2.10",
+    "fastapi>=0.156.1",
+    "httpx>=0.28.1",
+    "joblib>=1.6.0",
+    "limits>=5.8.0",
+    "numpy>=2.5.4",
+    "pandas>=3.0.6",
+    "penaltyblog>=1.13.1",
+    "pydantic-settings>=2.16.1",
+    "rapidfuzz>=3.14.6",
+    "scikit-learn>=1.9.1",
+    "sqlalchemy>=2.1.5",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+matchpredict = "matchpredict:main"
+
+[build-system]
+requires = ["uv_build>=0.12.15,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.1",
+]

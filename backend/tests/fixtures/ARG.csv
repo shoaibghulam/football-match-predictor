@@ -1,0 +1,5 @@
+﻿Country,League,Season,Date,Time,Home,Away,HG,AG,Res,PSCH,PSCD,PSCA,MaxCH,MaxCD,MaxCA,AvgCH,AvgCD,AvgCA,BFECH,BFECD,BFECA,B365CH,B365CD,B365CA
+Argentina,Liga Profesional ,2012/2013,03/08/2012,23:00,Arsenal Sarandi,Union de Santa Fe,1,0,H,1.9,3.39,5.03,1.9,3.5,5.68,1.76,3.3,4.74,,,,,,
+Argentina,Liga Profesional,2026,19/10/2026,23:00,Newells Old Boys,Central Cordoba,2,1,H,,,,1.65,3.7,6,1.62,3.58,5.54,1.69,3.85,6.4,1.62,3.6,6
+Argentina,Liga Profesional,2026,19/10/2026,23:00,Sarmiento Junin,Barracas Central,1,1,D,,,,2.4,3.1,3.33,2.31,2.95,3.22,2.44,3.1,3.6,2.4,2.85,3.25
+Argentina,Liga Profesional,2026,20/10/2026,01:15,Dep. Riestra,Union de Santa Fe,1,1,D,,,,2.15,3.1,3.9,2.09,3.03,3.64,2.18,3.25,4,2.1,2.85,3.9
