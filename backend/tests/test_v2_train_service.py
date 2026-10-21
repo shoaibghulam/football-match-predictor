@@ -11,7 +11,11 @@ import pytest
 from v2_kit import TINY, synthetic_frame
 
 from matchpredict.predictor.v2 import train as v2train
-from matchpredict.predictor.v2.data import build_canonicaliser, prepare_frame, standardise
+from matchpredict.predictor.v2.data import (
+    build_canonicaliser,
+    prepare_frame,
+    standardise,
+)
 from matchpredict.predictor.v2.service import V2Service
 
 
@@ -145,6 +149,8 @@ def test_update_results_dedupes_and_handles_partial_days(service, artifact_path)
     assert service.update_results(late) == 1
     old = _result("2016-09-01", "E0", "A1", "A2", 9, 0)
     assert service.update_results(old) == 0  # long before the league's cutoff
+    trained_day = service.train_cutoff["E0"].strftime("%Y-%m-%d")
+    assert service.update_results(_result(trained_day, "E0", "A5", "A6", 2, 2)) == 0  # already trained on
     upcoming = _result(day, "E0", "A3", "A4", np.nan, np.nan)
     assert service.update_results(upcoming) == 0
     assert service.last_result_date == pd.Timestamp(day)

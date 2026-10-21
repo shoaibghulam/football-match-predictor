@@ -26,3 +26,6 @@ backend/o
 
 # project notes (kept locally, not published)
 docs/
+
+# local archives (may contain .env / data)
+*.zip

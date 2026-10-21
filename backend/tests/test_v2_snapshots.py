@@ -10,7 +10,13 @@ from mp_testkit import FakeService, frame, memory_factory
 from matchpredict.api.app import create_app
 from matchpredict.api.predictions import Models
 from matchpredict.api.schemas import PredictionOut
-from matchpredict.api.snapshots import freeze_upcoming, frozen, is_pre_kickoff, kickoff_utc, needs_refresh
+from matchpredict.api.snapshots import (
+    freeze_upcoming,
+    frozen,
+    is_pre_kickoff,
+    kickoff_utc,
+    needs_refresh,
+)
 from matchpredict.config import Settings
 from matchpredict.db import repository as repo
 from matchpredict.db.models import Match, PredictionSnapshot

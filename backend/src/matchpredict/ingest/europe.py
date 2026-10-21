@@ -75,9 +75,8 @@ def build_mapper(session_factory: SessionFactory, europe: ServiceHolder | None =
             domestic.add(team)
     covered: set[str] = set()
     if service is not None:
-        book = service.book
-        covered = set(book.covered)
-        for team, country in book.country.items():
+        clubs, covered = _model_clubs(service)
+        for team, country in clubs.items():
             cands.setdefault(team, country)
     mapper = TeamNameMapper(cands)
     # clubs known only by their raw European-source name stay flagged as unmapped
@@ -85,6 +84,18 @@ def build_mapper(session_factory: SessionFactory, europe: ServiceHolder | None =
     if service is not None:
         mapper.aliases = {**mapper.aliases, **_normalised_aliases(getattr(service, "aliases", {}))}
     return mapper
+
+
+def _model_clubs(service) -> tuple[dict[str, str | None], set[str]]:
+    """Clubs (-> country) the European-capable model rates: v1 EuropeService (`book`) or V2Service."""
+    book = getattr(service, "book", None)
+    if book is not None:
+        return dict(book.country), set(book.covered)
+    rating = getattr(getattr(service, "state", None), "rating", None)
+    if rating is not None:
+        clubs = {team: rating.country(team) for team in rating.r}
+        return clubs, set(clubs)
+    return {}, set()
 
 
 def _normalised_aliases(aliases: dict[str, str]) -> dict[str, str]:

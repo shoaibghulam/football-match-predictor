@@ -1,9 +1,21 @@
 services:
   api:
     build: ./backend
+    # backend/docker-entrypoint.sh seeds the DB (idempotent: ~1 min on first start, then seconds)
+    env_file:
+      # API key and optional settings; values below override anything container-specific.
+      - path: ./backend/.env
+        required: false
     environment:
-      MP_CORS_ORIGINS: http://localhost:8080
-      FOOTBALL_DATA_ORG_KEY: ${FOOTBALL_DATA_ORG_KEY:-}
+      MP_HOST: 0.0.0.0
+      MP_PORT: "8000"
+      MP_DATABASE_URL: sqlite:////app/backend/data/app.db
+      MP_ARTIFACT_PATH: /app/backend/artifacts/model.joblib
+      MP_EUROPE_ARTIFACT_PATH: /app/backend/artifacts/europe.joblib
+      MP_V2_ARTIFACT_PATH: /app/backend/artifacts/model_v2.joblib
+      MP_HISTORY_CSV: /app/data/raw/Matches.csv
+      MP_OPENFOOTBALL_DIR: /app/backend/data/openfootball
+      MP_CORS_ORIGINS: http://localhost:8088,http://127.0.0.1:8088
     volumes:
       - ./data/raw:/app/data/raw:ro
       - ./backend/artifacts:/app/backend/artifacts
@@ -13,7 +25,10 @@ services:
   web:
     build: ./frontend
     ports:
-      - "8080:80"
+      # Bound to IPv4 loopback only: on some Windows machines a system process (DllHost) mirrors
+      # Docker's [::] listeners on [::1] and never answers, so "localhost" hangs. With no IPv6
+      # listener the browser falls straight back to 127.0.0.1. (Also keeps the app local-only.)
+      - "127.0.0.1:8088:80"
     depends_on:
       - api
     restart: unless-stopped

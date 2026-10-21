@@ -10,6 +10,7 @@ state, which is saved to a small sidecar (``model_v2.joblib.state``) and re-appl
 from __future__ import annotations
 
 import logging
+import sys
 import threading
 from pathlib import Path
 
@@ -47,6 +48,29 @@ def _round_probs(probs: np.ndarray) -> Probs:
     return Probs(home=home, draw=draw, away=round(1.0 - home - draw, DECIMALS))
 
 
+def _load_pickle(path: Path):
+    """joblib.load that also reads artifacts pickled by ``python -m ...v2.train``.
+
+    Those store the training dataclasses as ``__main__.<Class>``; map them back to the module.
+    """
+    from matchpredict.predictor.v2 import train as train_module
+
+    main = sys.modules.get("__main__")
+    classes = {
+        name: obj
+        for name, obj in vars(train_module).items()
+        if isinstance(obj, type) and obj.__module__ == train_module.__name__
+    }
+    added = [name for name in classes if main is not None and not hasattr(main, name)]
+    for name in added:
+        setattr(main, name, classes[name])
+    try:
+        return joblib.load(path)
+    finally:
+        for name in added:
+            delattr(main, name)
+
+
 def _key(league: str, day, home: str, away: str) -> tuple[str, str, str, str]:
     return (str(league), str(pd.Timestamp(day).date()), str(home), str(away))
 
@@ -81,11 +105,11 @@ class V2Service:
     @classmethod
     def load(cls, path: str | Path) -> V2Service:
         path = Path(path)
-        service = cls(joblib.load(path), artifact_path=path)
+        service = cls(_load_pickle(path), artifact_path=path)
         sidecar = path.with_name(path.name + STATE_SUFFIX)
         if sidecar.exists():
             try:
-                service._restore(joblib.load(sidecar))
+                service._restore(_load_pickle(sidecar))
             except Exception:
                 log.exception("ignoring unreadable v2 state sidecar %s", sidecar)
         return service

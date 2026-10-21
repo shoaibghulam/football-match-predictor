@@ -193,6 +193,32 @@ def test_build_mapper_flags_raw_european_names(tmp_path, europe):
     assert mapper.resolve("Getafe CF", "ESP") == ("Getafe", True)
 
 
+class _V2Rating:
+    def __init__(self, clubs: dict[str, str]) -> None:
+        self.r = {team: 1500.0 for team in clubs}
+        self._country = clubs
+
+    def country(self, team: str) -> str | None:
+        return self._country.get(team)
+
+
+class _V2LikeService:
+    """Mimics V2Service: clubs live in state.rating, there is no `.book`."""
+
+    def __init__(self, clubs: dict[str, str]) -> None:
+        self.state = type("State", (), {"rating": _V2Rating(clubs)})()
+
+
+def test_build_mapper_accepts_a_v2_style_service():
+    factory = memory_factory()
+    _seed_domestic(factory)
+    holder = ServiceHolder(_V2LikeService({"Dinamo Zagreb": "CRO", "FK Kairat": "KAZ"}))
+    mapper = eu.build_mapper(factory, holder)
+    assert mapper.resolve("GNK Dinamo Zagreb", "CRO") == ("Dinamo Zagreb", True)
+    assert mapper.resolve("FC Barcelona") == ("Barcelona", True)
+    assert "FK Kairat" in mapper.candidates
+
+
 def test_scheduler_registers_live_job(tmp_path, monkeypatch, europe):
     from matchpredict.ingest import scheduler as sched_mod
 

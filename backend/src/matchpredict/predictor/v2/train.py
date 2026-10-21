@@ -174,6 +174,10 @@ def member_probs(members: Members, X: pd.DataFrame, names: tuple[str, ...] = MEM
     return {k: out[k] for k in names}
 
 
+def _with_base(names: tuple[str, ...]) -> tuple[str, ...]:
+    return names if "base" in names else (*names, "base")  # the market pool always uses base
+
+
 @dataclass
 class Pools:
     domestic: LogPool
@@ -189,7 +193,7 @@ def fit_pools(ds: Dataset, members: Members, calib: np.ndarray, config: TrainCon
     y = ds.y[calib]
     euro = ds.euro[calib]
     odds = ds.has_odds[calib]
-    probs = member_probs(members, X, config.members)
+    probs = member_probs(members, X, _with_base(config.members))
     names = list(config.members)
     dom = fit_pool(names, [probs[n][~euro] for n in names], y[~euro])
     eur = fit_pool(names, [probs[n][euro] for n in names], y[euro]) if euro.sum() >= 50 else dom
@@ -200,7 +204,7 @@ def fit_pools(ds: Dataset, members: Members, calib: np.ndarray, config: TrainCon
 
 def ensemble_probs(members: Members, pools: Pools, X: pd.DataFrame, config: TrainConfig) -> dict[str, np.ndarray]:
     """Served probabilities: v2_base (no odds), v2_market (odds rows; NaN elsewhere)."""
-    probs = member_probs(members, X, config.members)
+    probs = member_probs(members, X, _with_base(config.members))
     names = list(config.members)
     euro = X["is_euro"].to_numpy() > 0
     stacked = [probs[n] for n in names]
@@ -649,4 +653,8 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - CLI (exer
 
 
 if __name__ == "__main__":  # pragma: no cover
-    main()
+    # Run via the importable module so pickled classes are saved as
+    # matchpredict.predictor.v2.train.<Class>, not __main__.<Class>.
+    from matchpredict.predictor.v2.train import main as _module_main
+
+    _module_main()

@@ -169,5 +169,5 @@ def test_season_regression_shrinks_toward_the_league_mean():
     plain.build_features(matches(rows))
     shrunk = GlobalRating(config=GlobalConfig(seed_clubelo=False, season_regress=0.5), countries=COUNTRIES)
     shrunk.build_features(matches(rows))
-    spread = lambda r: np.std([r.elo(f"A{i}") for i in range(10)])  # noqa: E731
+    spread = lambda r: np.std([r.elo(f"A{i}") for i in range(10)])
     assert spread(shrunk) < spread(plain)
