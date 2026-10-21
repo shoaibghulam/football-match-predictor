@@ -181,15 +181,15 @@ def run_setup(
             _seed_history(session_factory, settings, tracker, steps, fresh, errors)
             tracker.report("seeding_uefa", "Loading UEFA competition history")
             _step("uefa history", errors, lambda: steps.seed_uefa(session_factory, settings, europe))
-            # after both seeds: rows are joined to matches by (league, date, home, away)
-            _step("backtest import", errors,
-                  lambda: steps.import_backtest(session_factory, settings.backtest_bundle_path))  # fmt: skip
         for h in (holder, europe):  # models may have appeared meanwhile (lazy load)
             if h is not None:
                 h.ensure_loaded()
         if steps.needs_catchup(session_factory):
             tracker.report("ingesting", "Downloading today's fixtures and the latest results")
             _step("ingest", errors, lambda: _ingest(session_factory, settings, steps, holder, europe, fresh))
+        if settings.bootstrap_enabled:  # last: rows join to matches by (league, date, home, away)
+            _step("backtest import", errors,
+                  lambda: steps.import_backtest(session_factory, settings.backtest_bundle_path))  # fmt: skip
     finally:
         detail = "Setup finished" if not errors else "Setup finished with errors: " + "; ".join(errors)[:500]
         if not tracker.ready:

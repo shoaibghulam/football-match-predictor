@@ -64,6 +64,12 @@ def test_export_then_import_joins_by_key_with_fallbacks(tmp_path):
     with target() as s:
         assert len(s.scalars(select(BacktestPrediction)).all()) == 4
 
+    with target() as s:  # the first ingest adds the missing match -> re-import picks it up
+        repo.upsert_matches(s, frame([SOURCE_MATCHES[-1]]))
+    again = bb.import_bundle(target, path)
+    assert again.status == "imported" and again.joined == 5 and again.unmatched == 0
+    assert bb.import_bundle(target, path) == bb.ImportResult("skipped", rows=5, joined=5)
+
 
 def test_import_without_bundle_or_rows(tmp_path):
     assert bb.import_bundle(memory_factory(), tmp_path / "missing.csv.gz").status == "empty"

@@ -11,8 +11,9 @@ databases — and joined to the local ``matches`` table on import:
 3. the same with the day and month swapped (some Kaggle rows of the extra leagues) or the
    date ±1 day (late kick-offs published on the next UK day).
 
-Rows without a match are skipped (count logged). Import is idempotent: it is skipped when the
-table already holds rows for every model version in the file.
+Rows without a match are skipped (count logged). Import is idempotent: it is skipped unless
+more rows can be joined now than are stored for the bundle's model versions (e.g. after the
+first ingest added the latest results).
 
 CLI: ``uv run python -m matchpredict.db.backtest_bundle export|import [--path P]``
 """
@@ -129,14 +130,18 @@ def import_bundle(session_factory: SessionFactory, path: Path = DEFAULT_PATH) ->
     versions = sorted(bundle["model_version"].unique())
     with session_factory() as session:
         Base.metadata.create_all(session.get_bind(), tables=[BacktestPrediction.__table__])
-        present = set(session.scalars(select(BacktestPrediction.model_version).distinct()))
-    if set(versions) <= present:
-        log.info("backtest already imported (%d model versions)", len(versions))
-        return ImportResult("skipped", rows=len(bundle))
+        present = session.scalar(select(func.count()).select_from(BacktestPrediction)
+                                 .where(BacktestPrediction.model_version.in_(versions)))  # fmt: skip
+    if present >= len(bundle):
+        log.info("backtest already imported (%d rows)", present)
+        return ImportResult("skipped", rows=len(bundle), joined=present)
     matches = _matches_frame(session_factory, sorted(bundle["league"].unique()),
                              min(bundle["date"]) - dt.timedelta(days=40), max(bundle["date"]) + dt.timedelta(days=40))  # fmt: skip
     joined = join_matches(bundle, matches).dropna(subset=["match_id"])
     joined = joined.drop_duplicates("match_id", keep="first")
+    if len(joined) <= present:  # same versions already loaded and nothing new can be joined
+        log.info("backtest already imported (%d rows; %d joinable now)", present, len(joined))
+        return ImportResult("skipped", rows=len(bundle), joined=present, unmatched=len(bundle) - present)
     rows = [
         {"match_id": int(r.match_id), "season": int(r.season), "model": r.model, "model_version": r.model_version,
          "prob_home": float(r.prob_home), "prob_draw": float(r.prob_draw), "prob_away": float(r.prob_away)}

@@ -110,8 +110,8 @@ def test_first_start_downloads_history_then_uefa_then_ingest(tmp_path):
     steps = Steps(tracker=tracker)
     holder = ServiceHolder(FakeService())
     errors = bootstrap.run_setup(factory, _settings(tmp_path), tracker, holder, None, steps.build())
-    assert steps.calls == ["web", "uefa", "backtest", "ingest"]
-    assert steps.stages == ["seeding_history", "seeding_uefa", "seeding_uefa", "ingesting"]
+    assert steps.calls == ["web", "uefa", "ingest", "backtest"]
+    assert steps.stages == ["seeding_history", "seeding_uefa", "ingesting", "ingesting"]
     assert tracker.ready and "errors" in tracker.state.detail and errors == ["history: one file failed"]
     # the first ingest reuses the files the history step just downloaded
     fetch = steps.kwargs["ingest"]["fetch"]
@@ -126,7 +126,7 @@ def test_csv_present_uses_fast_path_and_marks_complete(tmp_path):
     tracker = bootstrap.SetupTracker()
     tracker.begin(first_start=True)
     assert bootstrap.run_setup(memory_factory(), settings, tracker, steps=steps.build()) == []
-    assert steps.calls == ["csv", "uefa", "backtest", "ingest"] and "fetch" not in steps.kwargs["ingest"]
+    assert steps.calls == ["csv", "uefa", "ingest", "backtest"] and "fetch" not in steps.kwargs["ingest"]
     assert history.is_complete(settings.history_cache_dir)
     assert tracker.state.detail == "Setup finished"
 
@@ -143,7 +143,7 @@ def test_failed_steps_do_not_block_later_ones(tmp_path):
     tracker = bootstrap.SetupTracker()
     tracker.begin(first_start=True)
     errors = bootstrap.run_setup(memory_factory(), settings, tracker, steps=steps.build())
-    assert steps.calls == ["csv", "uefa", "backtest", "ingest"]
+    assert steps.calls == ["csv", "uefa", "ingest", "backtest"]
     assert len(errors) == 2 and tracker.ready
     assert not history.is_complete(settings.history_cache_dir)  # csv seed retried next start
 
