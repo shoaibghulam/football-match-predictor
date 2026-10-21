@@ -18,7 +18,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from matchpredict.api.errors import install_error_handlers
 from matchpredict.api.ratelimit import RateLimiter
+from matchpredict.api.results import router as results_router
 from matchpredict.api.routes import router
+from matchpredict.bootstrap import SetupTracker
 from matchpredict.config import Settings, get_settings
 from matchpredict.contracts import PredictionService
 from matchpredict.db.session import SessionFactory, create_session_factory
@@ -81,15 +83,26 @@ def create_app(
         if app.state.session_factory is None:
             app.state.session_factory = create_session_factory(settings.database_url)
         if not injected:
+            if settings.bootstrap_enabled:  # fresh Docker volume: install the shipped models
+                from matchpredict.shipped_models import install_shipped_models
+
+                install_shipped_models(settings.shipped_models_dir, settings)
             app.state.holder.ensure_loaded()
             app.state.europe.ensure_loaded()
         scheduler = None
         if settings.scheduler_enabled and not injected:
+            from matchpredict import bootstrap
             from matchpredict.ingest.scheduler import start_scheduler
 
-            scheduler = start_scheduler(
-                app.state.session_factory, app.state.holder, settings, europe=app.state.europe
+            tracker = app.state.setup
+            # seeding (when bootstrapping) + the catch-up ingest run in the background
+            bootstrap.start_setup_thread(
+                app.state.session_factory, settings, tracker, app.state.holder, app.state.europe
             )
+            scheduler = start_scheduler(
+                app.state.session_factory, app.state.holder, settings, europe=app.state.europe,
+                catchup=False, ready=lambda: tracker.ready,
+            )  # fmt: skip
         try:
             yield
         finally:
@@ -114,6 +127,7 @@ def create_app(
         app.state.europe = europe_holder(settings)
     app.state.today = today
     app.state.now = now or (lambda: dt.datetime.now(dt.UTC))
+    app.state.setup = SetupTracker(None if injected else settings.setup_status_path)
 
     install_error_handlers(app)
     app.middleware("http")(RateLimiter(settings.rate_limit, frozenset({f"{API_PREFIX}/health"})))
@@ -142,6 +156,7 @@ def create_app(
         return response
 
     app.include_router(router, prefix=API_PREFIX)
+    app.include_router(results_router, prefix=API_PREFIX)
     return app
 
 

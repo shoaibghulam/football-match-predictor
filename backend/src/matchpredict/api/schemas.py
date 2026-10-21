@@ -42,6 +42,17 @@ class PredictResponse(PredictionOut):
     league: str
 
 
+class SetupOut(BaseModel):
+    """First-start progress (``ready`` once the history seed and the first ingest are done)."""
+
+    stage: Literal["starting", "seeding_history", "seeding_uefa", "ingesting", "ready"] = "ready"
+    detail: str = ""
+    progress: float | None = None  # 0..1 within the stage, when known
+    started_at: dt.datetime | None = None
+    updated_at: dt.datetime | None = None
+    first_start: bool = False
+
+
 class Health(BaseModel):
     status: Literal["ok", "degraded"]
     model_loaded: bool
@@ -57,6 +68,7 @@ class Health(BaseModel):
     model_v2_loaded: bool = False
     model_v2_version: str | None = None
     model_v2_scopes: list[str] = []  # scopes served by v2 ("domestic", "europe")
+    setup: SetupOut = SetupOut()
 
 
 class LeagueOut(BaseModel):

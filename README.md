@@ -35,6 +35,8 @@ The European model (UEFA competitions) scores RPS 0.2052, against 0.2090 for an 
 
 ## How to run it
 
+> Just want to run it? Use [Run with Docker](#run-with-docker-zero-setup--recommended): one command, nothing to download or train by hand. The steps below are the manual (development) path.
+
 ### 1. Prerequisites
 
 | Tool | Version | Install |
@@ -160,22 +162,54 @@ That's all you need. The backend fetches new results and fixtures on its own.
 
 ---
 
-## Run with Docker (optional)
+## Run with Docker (zero setup — recommended)
 
-You need three things in place: the data in `data/raw/` (step 3), `backend/.env` with your API key (step 4), and the trained models in `backend/artifacts/` (step 5, or copy that folder from another machine). Then, from the repo root:
+Works the same on macOS (Intel and Apple Silicon), Windows and Linux. You only need Docker Desktop (or Docker Engine with the compose plugin) and git — no data files, no trained models, no `.env`:
 
 ```bash
+git clone https://github.com/shoaibghulam/football-match-predictor
+cd football-match-predictor
+# optional: free football-data.org key for the full Champions League schedule and live scores (step 4)
+#   cp backend/.env.example backend/.env   and set FOOTBALL_DATA_ORG_KEY=...
 docker compose up -d --build
 ```
 
-On the first start the API loads the match history and the UEFA results into its database, which takes about 1–2 minutes. Later starts take seconds. Then open **http://localhost:8088**.
+Open **http://localhost:8088**. On the **first start** the app sets itself up in the background, and the page shows a "Setting up…" banner with progress until it's done. It takes about 5–10 minutes depending on your connection:
 
+1. installs the pre-trained models shipped in `backend/models/` (domestic, UEFA and v2 — no training needed);
+2. downloads the full match history (every season since 2000/01 of the 38 leagues, ~257k matches) from football-data.co.uk. That's about 3 minutes, cached in the database volume;
+3. loads the UEFA history (openfootball) and the shipped walk-forward backtest for the Results page;
+4. downloads today's fixtures and the latest results. Predictions then appear automatically.
+
+Later starts take seconds. Progress is also visible at `http://localhost:8088/api/v1/health` (`"setup": {"stage": ...}`).
+
+- Another port: `MP_WEB_PORT=8099 docker compose up -d` (the app is bound to `127.0.0.1` only, so it's reachable from this computer and not from your network).
+- `backend/.env` is optional. When present, the API reads your key and settings from it.
+- If `data/raw/Matches.csv` exists (step 3), it's loaded instead of downloading the history.
 - The frontend is served by nginx, which forwards `/api` to the backend container.
-- The database lives in the Docker volume `api-db`.
-- The API key and settings are read from `backend/.env`.
-- Logs: `docker compose logs -f api`. Stop: `docker compose down`. Full reset, including the database: `docker compose down -v`.
+- Data lives in two Docker volumes: `api-db` (database + download cache) and `api-artifacts` (models, updated by the daily ingest and the weekly retrain).
+- Logs: `docker compose logs -f api`. Stop: `docker compose down`. Full reset (database and models back to the shipped ones): `docker compose down -v`.
 
-The app is published on `127.0.0.1` only, so it is reachable from this computer and not from your network.
+### Use your own trained models
+
+The shipped models are copied into the `api-artifacts` volume only when a file is missing there, so your own models are never overwritten. To use models you trained locally (step 5):
+
+```bash
+# copy them into the running container's volume, then restart
+docker compose cp backend/artifacts/. api:/app/backend/artifacts/
+docker compose restart api
+```
+
+Or bind-mount your folder instead of the volume, with a `docker-compose.override.yml` next to `docker-compose.yml`:
+
+```yaml
+services:
+  api:
+    volumes:
+      - ./backend/artifacts:/app/backend/artifacts
+```
+
+To refresh the shipped models in the repo after retraining, copy `model.joblib`, `europe.joblib`, `model_v2.joblib` (and the `metrics*.json`) from `backend/artifacts/` to `backend/models/`. To refresh the shipped backtest, run `uv run python -m matchpredict.db.backtest_bundle export`.
 
 ---
 
@@ -242,6 +276,23 @@ frontend/
   src/           React app: pages, components, API client, utils
 data/raw/        input CSVs (git-ignored)
 docker-compose.yml
+```
+
+## Results page
+
+`/results` (nav: **Results**) lists every match we predicted, the actual score, and whether our prediction was right. It has filters for date, league (including all UEFA), team, correct/wrong, confidence (favourite ≥ 60%) and pending matches. It also shows accuracy, RPS, a comparison with the bookmaker, breakdowns by outcome and by league, a calibration table and an accuracy chart. API: `GET /api/v1/results` and `GET /api/v1/results/summary` (same filters).
+
+There are two records, and they are never mixed:
+
+- **Live**: predictions the app froze before kick-off (`prediction_snapshots`, from 21 Oct 2026), scored once the match is finished.
+- **Backtest**: walk-forward, out-of-sample v2 predictions in `backtest_predictions`. Each season is predicted by a model trained only on earlier seasons. 2022/23–2025/26: 50,215 matches, 50.4% accuracy, RPS 0.2044. Bookmaker on the 40,871 matches with odds: 50.4% / 0.2036; ours on the same matches: 50.4% / 0.2034.
+
+Until a live prediction has a final result, the page shows the backtest and says so. To regenerate the backtest (about 30 minutes; each season is written in its own short transaction):
+
+```bash
+cd backend
+uv run python -m matchpredict.predictor.backtest_export                 # 2022/23 .. 2026/27
+uv run python -m matchpredict.predictor.backtest_export --seasons 2025  # one season
 ```
 
 ## Data sources and credits

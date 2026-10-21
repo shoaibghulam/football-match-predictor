@@ -109,6 +109,20 @@ export interface Health {
   model_v2_version?: string | null
   /** Scopes served by model v2: "domestic" and/or "europe". */
   model_v2_scopes?: string[]
+  /** First-start progress (absent on older backends = ready). */
+  setup?: SetupStatus | null
+}
+
+export type SetupStage = 'starting' | 'seeding_history' | 'seeding_uefa' | 'ingesting' | 'ready' | (string & {})
+
+export interface SetupStatus {
+  stage: SetupStage
+  detail?: string
+  /** 0..1 within the stage, when known */
+  progress?: number | null
+  started_at?: string | null
+  updated_at?: string | null
+  first_start?: boolean
 }
 
 /** One past result. The backend shape may vary, so every field is optional. */

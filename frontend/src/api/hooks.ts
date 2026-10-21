@@ -1,4 +1,6 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef } from 'react'
+import { isSettingUp, SETUP_POLL_MS } from '../utils/setup'
 import {
   getFeatured,
   getFixtures,
@@ -11,7 +13,7 @@ import {
   type PredictParams,
 } from './endpoints'
 
-import type { Fixture } from './types'
+import type { Fixture, Health } from './types'
 
 export const STALE_TIME_MS = 5 * 60 * 1000
 /** Refetch interval while any listed match is live. */
@@ -73,12 +75,36 @@ export function useFeatured(date: string | undefined) {
   })
 }
 
+/** Poll health every 10 s while the backend's first-start setup runs, otherwise not at all. */
+export function setupRefetch(query: { state: { data?: Health } }): number | false {
+  return isSettingUp(query.state.data) ? SETUP_POLL_MS : false
+}
+
 export function useHealth() {
   return useQuery({
     queryKey: queryKeys.health,
     queryFn: ({ signal }) => getHealth(signal),
     staleTime: STALE_TIME_MS,
+    refetchInterval: setupRefetch,
   })
+}
+
+/**
+ * Refetch fixtures / featured matches whenever setup progresses: when it finishes, and
+ * whenever the backend's fixture count changes while it is still running.
+ */
+export function useRefetchOnSetupProgress(health: Health | undefined) {
+  const client = useQueryClient()
+  const marker = health ? `${isSettingUp(health)}|${health.fixtures ?? ''}` : null
+  const previous = useRef<string | null>(null)
+  useEffect(() => {
+    if (marker === null) return
+    if (previous.current !== null && previous.current !== marker) {
+      void client.invalidateQueries({ queryKey: ['fixtures'] })
+      void client.invalidateQueries({ queryKey: ['featured'] })
+    }
+    previous.current = marker
+  }, [marker, client])
 }
 
 export function usePrediction(params: PredictParams | null) {

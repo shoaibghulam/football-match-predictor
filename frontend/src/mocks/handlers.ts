@@ -21,6 +21,7 @@ export const handlers = [
       europe_model_version: 'europe-2026-10-21',
       football_data_org_key_configured: true,
       live_matches: 1,
+      setup: { stage: 'ready', detail: 'Setup finished', progress: null, first_start: false },
     }),
   ),
 

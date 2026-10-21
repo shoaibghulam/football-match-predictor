@@ -169,6 +169,14 @@ def _run_steps(
     sleep: Callable[[float], None],
     summary: IngestSummary,
 ) -> None:
+    # Fixtures first (2 small files): a fresh install shows matches within seconds.
+    # Upserts are order-independent (status only moves forward).
+    fixtures = football_data_uk.fetch_fixtures(fetch=fetch, sleep=sleep)
+    summary.errors.extend(fixtures.errors)
+    summary.fixtures_rows = len(fixtures.frame)
+    with session_factory() as session:
+        stats = repository.upsert_matches(session, fixtures.frame, source="football-data.co.uk")
+
     with session_factory() as session:  # resume extra leagues from their latest stored result
         since = {
             league: day - timedelta(days=RESUME_OVERLAP_DAYS)
@@ -180,7 +188,7 @@ def _run_steps(
     summary.errors.extend(results.errors)
     summary.results_rows = len(results.frame)
     with session_factory() as session:
-        stats = repository.upsert_matches(session, results.frame, source="football-data.co.uk")
+        stats = stats + repository.upsert_matches(session, results.frame, source="football-data.co.uk")
 
     try:
         summary.applied_results, summary.model_saved = _apply_to_model(
@@ -189,14 +197,6 @@ def _run_steps(
     except Exception as exc:
         log.exception("model update failed")
         summary.errors.append(f"model update: {type(exc).__name__}: {exc}")
-
-    fixtures = football_data_uk.fetch_fixtures(fetch=fetch, sleep=sleep)
-    summary.errors.extend(fixtures.errors)
-    summary.fixtures_rows = len(fixtures.frame)
-    with session_factory() as session:
-        stats = stats + repository.upsert_matches(
-            session, fixtures.frame, source="football-data.co.uk"
-        )
 
     org = _org_fixtures(session_factory, settings, today, sleep)
     if org is not None:

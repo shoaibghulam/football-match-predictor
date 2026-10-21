@@ -30,6 +30,7 @@ from matchpredict.api.schemas import (
     Odds,
     PredictResponse,
     Score,
+    SetupOut,
     TeamForm,
     TeamOut,
 )
@@ -131,7 +132,13 @@ def health(
         football_data_org_key_configured=bool(request.app.state.settings.football_data_org_key),
         live_matches=len(repository.live_matches(session)),
         **_v2_health(service, europe),
+        setup=_setup_health(request),
     )
+
+
+def _setup_health(request: Request) -> SetupOut:
+    tracker = getattr(request.app.state, "setup", None)
+    return SetupOut(**tracker.as_dict()) if tracker is not None else SetupOut()
 
 
 def _v2_health(domestic: object | None, europe: object | None) -> dict:

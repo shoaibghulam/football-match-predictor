@@ -267,11 +267,14 @@ def test_lifespan_starts_and_stops_scheduler(tmp_path, monkeypatch):
         def shutdown(self, wait):
             events.append("stop")
 
+    from matchpredict import bootstrap
+
     monkeypatch.setattr(sched_mod, "start_scheduler", lambda f, h, s, **kw: events.append("start") or FakeScheduler())
+    monkeypatch.setattr(bootstrap, "start_setup_thread", lambda *a, **kw: events.append("setup"))
     settings = _settings(tmp_path, scheduler_enabled=True)
     with TestClient(create_app(settings=settings)):
         pass
-    assert events == ["start", "stop"]
+    assert events == ["setup", "start", "stop"]
 
 
 def test_json_formatter_and_configure_logging():

@@ -1,5 +1,4 @@
 # data & artifacts
-data/raw/
 data/processed/
 archive.zip
 backend/artifacts/
@@ -29,3 +28,7 @@ docs/
 
 # local archives (may contain .env / data)
 *.zip
+
+# shipped pre-trained models (copied into the artifacts volume on first container start)
+!backend/models/
+!backend/models/*.joblib

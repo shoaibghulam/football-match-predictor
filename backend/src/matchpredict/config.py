@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     live_refresh_minutes: int = Field(default=2, ge=1, le=60)
     live_window_hours: float = Field(default=3.0, gt=0, le=24)
     history_csv: Path = REPO_DIR / "data" / "raw" / "Matches.csv"
+    # Zero-setup start (Docker): install the shipped models, seed history (Matches.csv when
+    # present, else football-data.co.uk downloads) and UEFA history in the background.
+    bootstrap_enabled: bool = False
+    shipped_models_dir: Path = BACKEND_DIR / "models"
+    history_cache_dir: Path = BACKEND_DIR / "data" / "history"
+    history_workers: int = Field(default=3, ge=1, le=4)  # parallel downloads (1 = strictly sequential)
+    setup_status_path: Path = BACKEND_DIR / "data" / "setup_status.json"
+    backtest_bundle_path: Path = BACKEND_DIR / "models" / "backtest_predictions.csv.gz"
     cors_origins: str = "http://localhost:5173"  # comma-separated
     scheduler_enabled: bool = True
     ingest_hour_utc: int = Field(default=7, ge=0, le=23)

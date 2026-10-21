@@ -4,6 +4,7 @@ import { AboutPage } from './pages/AboutPage'
 import { MatchesPage } from './pages/MatchesPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PredictPage } from './pages/PredictPage'
+import { ResultsPage } from './pages/ResultsPage'
 import { TeamPage } from './pages/TeamPage'
 
 export const routes: RouteObject[] = [
@@ -14,6 +15,7 @@ export const routes: RouteObject[] = [
       { path: 'team', element: <TeamPage /> },
       { path: 'team/:name', element: <TeamPage /> },
       { path: 'predict', element: <PredictPage /> },
+      { path: 'results', element: <ResultsPage /> },
       { path: 'about', element: <AboutPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

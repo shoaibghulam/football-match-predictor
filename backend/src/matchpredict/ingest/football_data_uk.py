@@ -158,6 +158,10 @@ def parse_main_csv(content: bytes | str) -> pd.DataFrame:
     raw = read_csv_bytes(content)
     if raw.empty or "Div" not in raw.columns:
         return empty_frame()
+    if "HomeTeam" not in raw.columns and {"HT", "AT"} <= set(raw.columns):
+        raw = raw.rename(columns={"HT": "HomeTeam", "AT": "AwayTeam"})  # early-2000s files (e.g. G1)
+    if "HomeTeam" not in raw.columns or "AwayTeam" not in raw.columns:
+        return empty_frame()
     odds = pick_odds(raw)
     frame = pd.DataFrame(
         {
@@ -191,7 +195,7 @@ def parse_new_league_csv(content: bytes | str) -> pd.DataFrame:
     Result files only carry closing odds, so their odds stay NaN.
     """
     raw = read_csv_bytes(content)
-    if raw.empty or "Country" not in raw.columns:
+    if raw.empty or not {"Country", "Date", "Home", "Away"} <= set(raw.columns):
         return empty_frame()
     country = _text(raw, "Country")
     unknown = sorted(set(country.dropna()) - set(COUNTRY_TO_CODE))

@@ -1,14 +1,16 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { useFeatured, useFixtures, useHealth, useLeagues } from '../api/hooks'
+import { useFeatured, useFixtures, useHealth, useLeagues, useRefetchOnSetupProgress } from '../api/hooks'
 import { DateControls, type DateRange } from '../components/DateControls'
 import { FeaturedSection } from '../components/FeaturedSection'
 import { FixtureList } from '../components/FixtureList'
 import { KeyNotice } from '../components/KeyNotice'
 import { LeagueSelect } from '../components/LeagueSelect'
+import { SetupNotice } from '../components/SetupNotice'
 import { EmptyState, ErrorState, LoadingList } from '../components/StatusStates'
 import { addDays, daysBetween, inLocalRange, isValidISODate, localTimeZoneLabel, todayISO } from '../utils/date'
 import { filterFixtures } from '../utils/leagues'
+import { isSettingUp } from '../utils/setup'
 
 /** API dates are UK dates; fetch one extra day either side so every local day is complete. */
 const TIMEZONE_PADDING_DAYS = 1
@@ -40,6 +42,8 @@ export function MatchesPage() {
   const featured = useFeatured(range.date)
   const health = useHealth()
   const missingKey = health.data?.football_data_org_key_configured === false
+  const settingUp = isSettingUp(health.data)
+  useRefetchOnSetupProgress(health.data)
 
   const localDay = useMemo(
     () => (fixtures.data ?? []).filter((f) => inLocalRange(f, range.date, rangeEnd)),
@@ -67,6 +71,13 @@ export function MatchesPage() {
     if (fixtures.isPending) return <LoadingList />
     if (fixtures.isError) {
       return <ErrorState error={fixtures.error} onRetry={() => void fixtures.refetch()} title="Could not load matches" />
+    }
+    if (localDay.length === 0 && settingUp) {
+      return (
+        <EmptyState title="Fixtures are on their way">
+          The first start is still downloading data. Matches and predictions appear here automatically.
+        </EmptyState>
+      )
     }
     if (localDay.length === 0) {
       return (
@@ -99,6 +110,7 @@ export function MatchesPage() {
         </p>
       </div>
 
+      {settingUp && <SetupNotice health={health.data} />}
       {missingKey && <KeyNotice />}
       {featuredLocal.length > 0 && <FeaturedSection fixtures={featuredLocal} leagues={leagues.data} />}
 

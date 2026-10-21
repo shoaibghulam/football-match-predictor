@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -36,12 +37,25 @@ def start_scheduler(
     holder: ServiceHolder,
     settings: Settings,
     europe: ServiceHolder | None = None,
+    *,
+    catchup: bool = True,
+    ready: Callable[[], bool] | None = None,
 ) -> BackgroundScheduler:
+    """``catchup=False`` when the start-up setup thread runs the catch-up ingest itself;
+    ``ready`` (optional) pauses the ingest / live jobs while first-start seeding is running."""
+    is_ready = ready or (lambda: True)
+
     def job() -> None:
+        if not is_ready():
+            log.info("first-start setup still running; skipping scheduled ingest")
+            return
         run_ingest(session_factory, holder, settings, europe=europe)
 
     def live_job() -> None:
         from matchpredict.ingest.europe import refresh_live
+
+        if not is_ready():
+            return
 
         summary = refresh_live(session_factory, settings, europe)
         if not summary.skipped:
@@ -62,7 +76,7 @@ def start_scheduler(
         coalesce=True,
         misfire_grace_time=3600,
     )
-    if needs_catchup(session_factory):
+    if catchup and needs_catchup(session_factory):
         log.info("last ingest is stale; scheduling a catch-up run now")
         scheduler.add_job(job, id="catchup_ingest", max_instances=1)  # runs immediately
     if europe is not None and settings.europe_ingest_enabled:
