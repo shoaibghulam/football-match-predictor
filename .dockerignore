@@ -1,0 +1,17 @@
+# Root build context for the single-container Dockerfile. Never ship secrets or local state.
+**/.env
+**/.env.*
+!**/.env.example
+*.zip
+.git
+docs
+**/node_modules
+**/dist
+**/coverage
+**/.venv
+**/__pycache__
+**/.pytest_cache
+backend/data
+backend/artifacts
+backend/tests
+frontend/src/**/*.test.*

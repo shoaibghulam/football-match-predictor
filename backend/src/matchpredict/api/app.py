@@ -11,10 +11,14 @@ import logging
 import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from matchpredict.api.errors import install_error_handlers
 from matchpredict.api.ratelimit import RateLimiter
@@ -157,7 +161,29 @@ def create_app(
 
     app.include_router(router, prefix=API_PREFIX)
     app.include_router(results_router, prefix=API_PREFIX)
+    if settings.static_dir is not None:
+        _mount_web_app(app, Path(settings.static_dir))
     return app
+
+
+def _mount_web_app(app: FastAPI, static_dir: Path) -> None:
+    """Serve the built frontend; any non-API path that is not a file gets index.html (SPA routes)."""
+    root = static_dir.resolve()
+    index = root / "index.html"
+    if not index.is_file():
+        log.warning("MP_STATIC_DIR %s has no index.html; web app not served", root)
+        return
+    if (root / "assets").is_dir():
+        app.mount("/assets", StaticFiles(directory=root / "assets"), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    async def web_app(path: str) -> FileResponse:
+        if path == API_PREFIX.strip("/") or path.startswith(API_PREFIX.strip("/") + "/"):
+            raise StarletteHTTPException(status_code=404)
+        candidate = (root / path).resolve()
+        if path and candidate.is_file() and candidate.is_relative_to(root):
+            return FileResponse(candidate)
+        return FileResponse(index)
 
 
 def _default_app() -> FastAPI:

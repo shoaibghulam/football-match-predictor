@@ -57,6 +57,8 @@ class Settings(BaseSettings):
     rate_limit: str = "60/minute"
     host: str = "127.0.0.1"
     port: int = 8000
+    # Single-container deploys (root Dockerfile): serve the built web app from this folder.
+    static_dir: Path | None = None
     log_level: str = "INFO"
     results_lookback_days: int = 365  # how far back new-league result files are ingested
 
