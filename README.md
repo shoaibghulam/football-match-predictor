@@ -162,15 +162,20 @@ That's all you need. The backend fetches new results and fixtures on its own.
 
 ## Run with Docker (optional)
 
-First complete steps 3–5 so that `backend/artifacts/` contains the trained models. Then, from the repo root:
+You need three things in place: the data in `data/raw/` (step 3), `backend/.env` with your API key (step 4), and the trained models in `backend/artifacts/` (step 5, or copy that folder from another machine). Then, from the repo root:
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-Open **http://localhost:8080**. The frontend is served by nginx, which forwards `/api` to the backend container. The database lives in a Docker volume.
+On the first start the API loads the match history and the UEFA results into its database, which takes about 1–2 minutes. Later starts take seconds. Then open **http://localhost:8088**.
 
-To pass your API key, either set it in your shell before running compose (`FOOTBALL_DATA_ORG_KEY=... docker compose up`) or put it in a root `.env` file next to `docker-compose.yml`.
+- The frontend is served by nginx, which forwards `/api` to the backend container.
+- The database lives in the Docker volume `api-db`.
+- The API key and settings are read from `backend/.env`.
+- Logs: `docker compose logs -f api`. Stop: `docker compose down`. Full reset, including the database: `docker compose down -v`.
+
+The app is published on `127.0.0.1` only, so it is reachable from this computer and not from your network.
 
 ---
 
